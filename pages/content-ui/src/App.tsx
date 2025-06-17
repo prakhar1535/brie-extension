@@ -4,9 +4,12 @@ import { annotationsRedoStorage, annotationsStorage, captureStateStorage } from 
 import { store, ReduxProvider } from '@extension/store';
 import { Toaster, TooltipProvider } from '@extension/ui';
 
+import { RecordingReplayModal } from './components/recording/recording-replay.modal';
 import Content from './content';
 
 export default function App() {
+  const [replayData, setReplayData] = useState<any[]>([]);
+  const [showReplayModal, setShowReplayModal] = useState(false);
   const [screenshots, setScreenshots] = useState<{ name: string; image: string }[]>();
 
   useEffect(() => {
@@ -15,14 +18,21 @@ export default function App() {
       await captureStateStorage.setCaptureState('unsaved');
     };
 
+    const handleStartReplay = async event => {
+      setReplayData(event.detail.events);
+      setShowReplayModal(true);
+    };
+
     // Attach event listener
     window.addEventListener('DISPLAY_MODAL', handleDisplayModal);
     window.addEventListener('CLOSE_MODAL', handleOnCloseModal);
+    window.addEventListener('START_REPLAY', handleStartReplay);
 
     // Cleanup event listener on unmount
     return () => {
       window.removeEventListener('DISPLAY_MODAL', handleDisplayModal);
       window.removeEventListener('CLOSE_MODAL', handleOnCloseModal);
+      window.removeEventListener('START_REPLAY', handleStartReplay);
     };
   }, []);
 
@@ -47,6 +57,14 @@ export default function App() {
                 <Content onClose={handleOnCloseModal} screenshots={screenshots} />
               </div>
             </main>
+          )}
+
+          {showReplayModal && (
+            <RecordingReplayModal
+              events={replayData}
+              onClose={() => setShowReplayModal(false)}
+              isVisible={showReplayModal}
+            />
           )}
 
           <Toaster richColors />
